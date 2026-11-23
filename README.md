@@ -13,6 +13,12 @@ open "build/Simple PDF Merger.app"
 
 The build produces a universal app for Apple silicon and Intel Macs, with an ad hoc signature for local use.
 
+## Install from a disk image
+
+Run `./package-dmg.sh` to build `build/Simple PDF Merger.dmg`. Open the DMG, drag **Simple PDF Merger** into **Applications**, then eject the disk image.
+
+The packaging script builds the app in a temporary folder and removes it after packaging.
+
 ## Merge PDFs
 
 1. Click **Add PDFs** or drag PDFs from Finder into the list.
