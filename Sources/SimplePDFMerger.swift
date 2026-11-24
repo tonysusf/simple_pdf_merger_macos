@@ -7,9 +7,9 @@ struct SimplePDFMergerApp: App {
     var body: some Scene {
         WindowGroup("Simple PDF Merger") {
             MergerView()
-                .frame(minWidth: 530, minHeight: 360)
+                .frame(minWidth: 550, minHeight: 400)
         }
-        .defaultSize(width: 630, height: 460)
+        .defaultSize(width: 660, height: 480)
     }
 }
 
@@ -35,87 +35,196 @@ private struct MergerView: View {
         model.inputs.firstIndex { $0.id == model.selection }
     }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Text("PDFs to merge")
-                    .font(.title2.bold())
-                Spacer()
-                Button(action: choosePDFs) {
-                    Label("Add PDFs", systemImage: "plus")
-                }
-                .keyboardShortcut("o", modifiers: .command)
-            }
-            .disabled(model.isMerging)
+    private static let logo = Bundle.main.url(forResource: "AppIcon", withExtension: "icns")
+        .flatMap { NSImage(contentsOf: $0) }
+    private let indigo = Color(red: 0.32, green: 0.31, blue: 0.88)
+    private let cyan = Color(red: 0.16, green: 0.72, blue: 0.93)
 
-            List(selection: $model.selection) {
-                ForEach(model.inputs) { input in
-                    Label {
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(input.url.lastPathComponent)
-                            Text(input.url.deletingLastPathComponent().path)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                                .truncationMode(.middle)
-                        }
-                        .padding(.vertical, 3)
-                    } icon: {
-                        Image(systemName: "doc")
-                    }
-                    .tag(input.id)
-                }
-            }
-            .overlay {
-                if model.inputs.isEmpty {
-                    VStack(spacing: 10) {
-                        Image(systemName: "doc.on.doc")
-                            .font(.system(size: 32))
-                        Text("Drop PDFs here or click Add PDFs")
-                    }
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            header
+            workspace
+            actions
+
+            if !model.status.isEmpty {
+                Label(model.status, systemImage: model.isMerging ? "clock" : "checkmark.circle.fill")
+                    .font(.callout)
                     .foregroundStyle(.secondary)
-                    .allowsHitTesting(false)
+                    .lineLimit(2)
+            }
+        }
+        .padding(24)
+        .background {
+            ZStack {
+                Color(nsColor: .windowBackgroundColor)
+                LinearGradient(
+                    colors: [indigo.opacity(0.13), cyan.opacity(0.07), .clear],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            }
+            .ignoresSafeArea()
+        }
+        .tint(indigo)
+        .alert("Couldn’t Merge PDFs", isPresented: $model.showsError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(model.errorMessage)
+        }
+    }
+
+    private var header: some View {
+        HStack(spacing: 12) {
+            if let logo = Self.logo {
+                Image(nsImage: logo)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 76, height: 76)
+                    .accessibilityHidden(true)
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Simple PDF Merger")
+                    .font(.system(size: 27, weight: .bold, design: .rounded))
+                    .accessibilityAddTraits(.isHeader)
+                Text("Combine multiple PDFs into one file.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            Button(action: choosePDFs) {
+                Label("Add PDFs", systemImage: "plus")
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.large)
+            .keyboardShortcut("o", modifiers: .command)
+            .disabled(model.isMerging)
+        }
+    }
+
+    private var workspace: some View {
+        let outline = RoundedRectangle(cornerRadius: 18)
+        let isEmpty = model.inputs.isEmpty
+
+        return VStack(alignment: .leading, spacing: 9) {
+            HStack {
+                Text("Merge order")
+                    .font(.headline)
+                    .accessibilityAddTraits(.isHeader)
+                Spacer()
+                Text(model.inputs.count == 1 ? "1 PDF" : "\(model.inputs.count) PDFs")
+                    .font(.caption.monospacedDigit().weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 3)
+
+            Group {
+                if isEmpty {
+                    emptyState
+                } else {
+                    fileList
                 }
             }
-            .border(model.isDropTarget ? Color.accentColor : Color.secondary.opacity(0.2))
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background {
+                outline.fill(Color(nsColor: .controlBackgroundColor))
+                outline.fill(indigo.opacity(model.isDropTarget ? 0.14 : 0.035))
+            }
+            .clipShape(outline)
+            .overlay {
+                outline.strokeBorder(
+                    model.isDropTarget ? indigo : Color.secondary.opacity(isEmpty ? 0.45 : 0.20),
+                    style: StrokeStyle(lineWidth: model.isDropTarget ? 2 : 1, dash: isEmpty ? [6, 5] : [])
+                )
+                .allowsHitTesting(false)
+            }
             .dropDestination(for: URL.self) { urls, _ in
                 guard !model.isMerging else { return false }
                 return addPDFs(urls)
             } isTargeted: {
                 model.isDropTarget = $0 && !model.isMerging
             }
+        }
+    }
 
-            HStack(spacing: 10) {
-                Button("Move Up", systemImage: "arrow.up") { move(by: -1) }
-                    .disabled((selectedIndex ?? 0) == 0)
-                Button("Move Down", systemImage: "arrow.down") { move(by: 1) }
-                    .disabled(selectedIndex.map { $0 == model.inputs.count - 1 } ?? true)
-                Button("Remove", systemImage: "trash", action: removeSelected)
-                    .disabled(selectedIndex == nil)
-                Spacer()
-                if model.isMerging {
-                    ProgressView().controlSize(.small)
+    private var emptyState: some View {
+        VStack(spacing: 8) {
+            Image(systemName: model.isDropTarget ? "arrow.down.doc.fill" : "doc.on.doc")
+                .font(.system(size: 26, weight: .medium))
+                .foregroundStyle(.primary)
+                .frame(width: 58, height: 58)
+                .background {
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(LinearGradient(
+                            colors: [cyan.opacity(0.28), indigo.opacity(0.24)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ))
                 }
-                Button("Merge PDFs…", action: savePDF)
-                    .keyboardShortcut(.defaultAction)
-                    .buttonStyle(.borderedProminent)
-                    .disabled(model.inputs.count < 2)
-            }
-            .disabled(model.isMerging)
+                .accessibilityHidden(true)
+                .padding(.bottom, 4)
+            Text(model.isDropTarget ? "Release to add PDFs" : "Drop PDFs here")
+                .font(.system(.title3, design: .rounded, weight: .semibold))
+            Text("Or choose files with Add PDFs")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .contentShape(Rectangle())
+    }
 
-            if !model.status.isEmpty {
-                Text(model.status)
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
+    private var fileList: some View {
+        List(selection: $model.selection) {
+            ForEach(Array(model.inputs.enumerated()), id: \.element.id) { index, input in
+                HStack(spacing: 10) {
+                    Text((index + 1).formatted())
+                        .font(.caption.monospacedDigit().weight(.semibold))
+                        .frame(minWidth: 24)
+                    Image(systemName: "doc.fill")
+                        .font(.body)
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(input.url.lastPathComponent)
+                            .font(.callout.weight(.semibold))
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                        Text(input.url.deletingLastPathComponent().path)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                }
+                .padding(.vertical, 6)
+                .tag(input.id)
             }
         }
-        .padding(22)
-        .alert("Couldn’t Merge PDFs", isPresented: $model.showsError) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(model.errorMessage)
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .padding(5)
+    }
+
+    private var actions: some View {
+        HStack(spacing: 8) {
+            Button("Move Up", systemImage: "arrow.up") { move(by: -1) }
+                .disabled((selectedIndex ?? 0) == 0)
+            Button("Move Down", systemImage: "arrow.down") { move(by: 1) }
+                .disabled(selectedIndex.map { $0 == model.inputs.count - 1 } ?? true)
+            Button("Remove", systemImage: "trash", action: removeSelected)
+                .disabled(selectedIndex == nil)
+            Spacer()
+            if model.isMerging {
+                ProgressView().controlSize(.small)
+            }
+            Button("Merge PDFs…", systemImage: "arrow.triangle.merge", action: savePDF)
+                .keyboardShortcut(.defaultAction)
+                .buttonStyle(.borderedProminent)
+                .disabled(model.inputs.count < 2)
         }
+        .controlSize(.large)
+        .disabled(model.isMerging)
     }
 
     private func choosePDFs() {
