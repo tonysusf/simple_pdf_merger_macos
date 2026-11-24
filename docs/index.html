@@ -4,40 +4,45 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Combine and reorder PDFs locally on your Mac with Simple PDF Merger, a free and open-source app for macOS.">
-  <meta name="theme-color" content="#101221">
+  <meta name="theme-color" content="#f8faff">
   <title>Simple PDF Merger for Mac</title>
   <link rel="icon" href="app-icon.png" type="image/png">
   <style>
     :root {
-      color-scheme: dark;
+      color-scheme: light;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: #f4f2fc;
-      background: #101221;
-      --muted: #bdbed4;
-      --line: #ffffff21;
-      --accent: #cbc2ff;
+      color: #172044;
+      background: #f8faff;
+      --muted: #485474;
+      --line: #d9e1f2;
+      --accent: #4431ba;
     }
 
     * { box-sizing: border-box; }
-    body { margin: 0; background: radial-gradient(ellipse at 82% 28%, #29234e, transparent 48%); }
+    body { margin: 0; background: radial-gradient(ellipse at 90% 12%, #e0d9ff, transparent 48%), radial-gradient(ellipse at 12% 48%, #d9f4ff, transparent 48%), #f8faff; }
     a { color: inherit; }
-    a:focus-visible { outline: 2px solid #91e7ff; outline-offset: 5px; }
+    a:focus-visible { outline: 2px solid #254ed9; outline-offset: 5px; }
     .wrap { width: min(1120px, calc(100% - 48px)); margin-inline: auto; }
     header, footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 20px; }
     header { border-bottom: 1px solid var(--line); }
     .brand { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; }
     .brand img { width: 40px; height: 40px; }
     .quiet { color: var(--muted); font-size: .92rem; text-underline-offset: 4px; }
-    .quiet:hover { color: white; }
+    .quiet:hover { color: #4431ba; }
     .hero { display: grid; grid-template-columns: .95fr 1fr; align-items: center; gap: clamp(30px, 6vw, 84px); padding-block: clamp(56px, 9vw, 112px); }
     h1 { margin: 0; font-size: clamp(2.8rem, 6vw, 5.2rem); line-height: .99; letter-spacing: -.075em; max-width: 10ch; }
     h1 span { color: var(--accent); }
     .intro { max-width: 36ch; margin: 22px 0 25px; color: var(--muted); font-size: 1.13rem; line-height: 1.65; }
-    .download { display: inline-flex; align-items: center; gap: 12px; border-radius: 12px; padding: 15px 20px; background: #cdc4ff; color: #181333; text-decoration: none; font-weight: 750; box-shadow: 0 8px 32px #9580ff38; }
-    .download:hover { background: #e1dbff; }
+    .download { display: inline-flex; align-items: center; gap: 12px; border-radius: 12px; padding: 15px 20px; background: linear-gradient(110deg, #254ed9, #5c36c7); color: #fff; text-decoration: none; font-weight: 750; box-shadow: 0 10px 24px #4235c540; transition: transform 160ms ease, box-shadow 160ms ease; }
+    .download:hover { transform: translateY(-2px); box-shadow: 0 14px 30px #4235c55c; }
+    .download:active { transform: translateY(0); }
+    @media (prefers-reduced-motion: reduce) {
+      .download { transition: none; }
+      .download:hover { transform: none; }
+    }
     .requirements { margin: 13px 0 0; font-size: .87rem; color: var(--muted); line-height: 1.55; }
 
-    .preview { margin: 0; border: 1px solid #8880b75c; border-radius: 18px; overflow: hidden; background: #f4f2fc; color: #26233c; box-shadow: 0 24px 75px #0806158c; }
+    .preview { margin: 0; border: 1px solid #cbd4ed; border-radius: 18px; overflow: hidden; background: #f4f2fc; color: #26233c; box-shadow: 0 24px 60px #3c45912e; }
     .preview img { display: block; width: 100%; height: auto; margin-top: -4.8%; }
 
     .details { display: grid; grid-template-columns: 1fr 1fr; gap: 28px 64px; border-block: 1px solid var(--line); padding-block: 27px; }
